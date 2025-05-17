@@ -25,8 +25,11 @@ portkey = Portkey(
     }
 )
 
+from langfuse.api import AnnotationQueueObjectType, CreateAnnotationQueueItemRequest, AnnotationQueueStatus
+from langfuse.client import FernLangfuse
+
 @observe()
-def main():
+def main2():
     langfuse_context.update_current_trace(
         session_id=session_id,
         user_id=user_id,
@@ -37,7 +40,24 @@ def main():
     res = Explainer(portkey).ask(content)
     res = ChuniByoAdapter(portkey).rewrite(res)
 
+    langfuse_context.update_current_observation(
+        input= content,
+        output = res,
+    )
+
+    langfuse.api.annotation_queues.create_queue_item(
+        queue_id="cm9a1dv7k0bt4ad07wq1ko2nn",
+        request=CreateAnnotationQueueItemRequest(
+            object_id=langfuse_context.get_current_observation_id(),
+            object_type=AnnotationQueueObjectType.OBSERVATION,
+            status=AnnotationQueueStatus.PENDING,
+        ),
+    )
     print(res)
+
+@observe()
+def main():
+    main2()
 
 class Explainer:
     def __init__(self, portkey):
@@ -46,7 +66,7 @@ class Explainer:
     @observe(as_type="generation")
     def ask(self, text):
         messages =[
-                {"role": "system", "content": "あなたは有能な解説者です。端的に説明してください。"},
+                {"role": "system", "content": "あなたは有能な解説者です。一文で説明してください。"},
                 {"role": "user", "content": text},
             ]
         response = self.portkey.chat.completions.create(
@@ -76,7 +96,7 @@ class CharacterAdapter:
 class ChuniByoAdapter(CharacterAdapter):
     @observe(as_type="generation")
     def rewrite(self, content):
-        prompt = langfuse.get_prompt("ChuniByo", label="character-adapter")
+        prompt = langfuse.get_prompt("ChuniByo", label="latest")
         messages = prompt.compile(content=content)
         response = self.portkey.chat.completions.create(
             messages=messages,
