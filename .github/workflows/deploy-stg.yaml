@@ -16,6 +16,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,6 +32,13 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Get diff files from main
+        id: diff
+        run: |
+          git fetch origin main
+          git diff --name-only origin/main...HEAD prompts/ > diff.txt
+          cat diff.txt
+
       - name: Run script
         env:
           LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST }}
@@ -36,4 +46,9 @@ jobs:
           LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
         run: |
           source venv/bin/activate
-          PYTHONPATH=. python deploy/create_or_update_prompt.py
+          while read file; do
+            if [[ "$file" == *.py ]]; then
+              echo "Running on $file"
+              PYTHONPATH=. python deploy/create_or_update_prompt.py $file
+            fi
+          done < diff.txt
