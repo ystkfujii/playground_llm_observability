@@ -1,8 +1,6 @@
 import os
 import sys
 from langfuse import Langfuse
-from prompts.item1 import ITEM1
-
 
 def read_file(path: str) -> tuple[str, str]:
     """

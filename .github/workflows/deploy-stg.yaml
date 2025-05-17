@@ -19,7 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -36,7 +35,7 @@ jobs:
         id: diff
         run: |
           git fetch origin main
-          git diff --name-only origin/main...HEAD prompts/ > diff.txt
+          git diff --name-only --diff-filter=AM origin/main...HEAD prompts/ > diff.txt
           cat diff.txt
 
       - name: Run script
