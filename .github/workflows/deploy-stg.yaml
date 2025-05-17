@@ -50,8 +50,6 @@ jobs:
         run: |
           source venv/bin/activate
           while read file; do
-            if [[ "$file" == *.py ]]; then
-              echo "Running on $file"
-              PYTHONPATH=. python deploy/create_or_update_prompt.py $file
-            fi
+            echo "Running on $file"
+            PYTHONPATH=. python deploy/create_or_update_prompt.py $file
           done < diff.txt
