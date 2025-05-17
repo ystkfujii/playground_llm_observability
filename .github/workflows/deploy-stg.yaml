@@ -1,16 +1,15 @@
 name: Deploy Prompt
 
 on:
-  push:
-    paths:
-      - '**.py'
-  workflow_dispatch:
+  pull_request:
+    types: [closed]
 
 permissions:
   contents: read
 
 jobs:
   run-python-script:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -24,6 +23,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Show commit SHAs
+        run: |
+          echo "Merged commit: ${{ github.sha }}"
+          echo "PR base: ${{ github.event.pull_request.base.sha }}"
+          echo "PR head: ${{ github.event.pull_request.head.sha }}"
+
       - name: Install dependencies
         run: |
           python -m venv venv
@@ -34,8 +39,7 @@ jobs:
       - name: Get diff files from main
         id: diff
         run: |
-          git fetch origin main
-          git diff --name-only --diff-filter=AM origin/main...HEAD prompts/ > diff.txt
+          git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }} ${{ github.sha }} prompts/ > diff.txt
           cat diff.txt
 
       - name: Run script
